@@ -238,7 +238,7 @@ public class CommandManager {
             try {
                 Person owner = objArgument.getOwner();
                 if (owner != null) {
-                    int count = collectionRealizer.countLessThanOwner(owner);
+                    long count = collectionRealizer.countLessThanOwner(owner);
                     return new Response("Количество продуктов с владельцами, чьи имена алфавитно раньше, чем у указанного владельца", String.valueOf(count));
                 } else {
                     return new Response("Указан некорректный владелец", "");

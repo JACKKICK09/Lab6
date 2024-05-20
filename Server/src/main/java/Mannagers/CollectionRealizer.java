@@ -8,13 +8,10 @@ import Objects.Product;
 import Objects.ProductModel;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Stack;
-import java.util.Vector;
+import java.util.*;
 import java.util.stream.Collectors;
 
-public class CollectionRealizer {
+public class CollectionRealizer implements Iterable<Product> {
     private static Vector<Product> CollectionRealizer = new Vector<>();
     private static int idCounter = 0;
     public CompareProduct comparator;
@@ -28,7 +25,34 @@ public class CollectionRealizer {
         comparator = new CompareProduct();
         collection = new Vector<>();
         this.InitializerDate = new Date();
+
+//        for(Product p : new CollectionRealizer()) {
+//
+//        }
     }
+
+    @Override
+    public Iterator<Product> iterator() {
+        return new CollectionIterator();
+    }
+
+    private class CollectionIterator implements Iterator<Product> {
+        private int currentIndex = 0;
+
+        @Override
+        public boolean hasNext() {
+            return currentIndex < collection.size();
+        }
+
+        @Override
+        public Product next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return collection.get(currentIndex++);
+        }
+    }
+
     public Vector<Product> add(ProductModel element){
         idCounter++;
         Product product = new Product(idCounter,
@@ -39,13 +63,15 @@ public class CollectionRealizer {
                 element.getManufactureCost(),
                 element.getUnitOfMeasure(),
                 element.getOwner()
-                );
+        );
         collection.add(product);
         return sortByCoords(collection);
     }
+
     public Vector<Product> show(){
         return sortByCoords(collection);
     }
+
     public String info(){
         return "Тип коллекции: " + collection.getClass() + "\n"
                 + "Дата создания: " + InitializerDate + "\n"
@@ -58,7 +84,7 @@ public class CollectionRealizer {
     }
 
     public Vector<Product> removeById(int id) throws NonExistingElementException {
-        if (!collection.removeIf(vehicle -> vehicle.getId() == id)){
+        if (!collection.removeIf(product -> product.getId() == id)){
             throw new NonExistingElementException("Элемента с таким id не существует");
         }
         return sortByCoords(collection);
@@ -67,10 +93,10 @@ public class CollectionRealizer {
     public Vector<Product> removeLower(int startId) throws NonExistingElementException {
         int sizeColl = collection.size();
         if (sizeColl < startId){
-            throw new NonExistingElementException("Элемента с таким id не сужществует");
+            throw new NonExistingElementException("Элемента с таким id не существует");
         }
 
-        collection.removeIf(vehicle -> vehicle.getId() <= startId);
+        collection.removeIf(product -> product.getId() <= startId);
         return sortByCoords(collection);
     }
 
@@ -79,7 +105,7 @@ public class CollectionRealizer {
             throw new NonExistingElementException("Элемента с таким id не существует");
         }
 
-        for (Product product:collection) {
+        for (Product product : collection) {
             if (current_id == product.getId()){
                 collection.remove(product);
 
@@ -116,23 +142,14 @@ public class CollectionRealizer {
         }
     }
 
-
-    public int countLessThanOwner(Person owner) {
-        int count = 0;
-        for (Product product : collection) {
-            Person productOwner = product.getOwner();
-            if (productOwner != null && productOwner.getName().compareTo(owner.getName()) < 0) {
-                count++;
-            }
-        }
-        return count;
+    public long countLessThanOwner(Person owner) {
+        return collection.stream().filter(product -> product.getOwner().getName().compareTo(owner.getName()) < 0).count();
     }
 
-
-
-
     public Vector<Product> filterStartsWithName(String substring) throws NonExistingElementException {
-        var filteredCollection = collection.stream().filter(vehicle -> vehicle.getName().startsWith(substring)).collect(Collectors.toCollection(Stack::new));
+        var filteredCollection = collection.stream()
+                .filter(product -> product.getName().startsWith(substring))
+                .collect(Collectors.toCollection(Vector::new));
 
         if (filteredCollection.isEmpty()){
             throw new NonExistingElementException("Элементов с таким именем не существует");
@@ -151,9 +168,7 @@ public class CollectionRealizer {
         throw new IllegalArgumentException("Product with id " + id + " not found");
     }
 
-
-    private class CompareProduct implements Comparator<Product>{
-
+    private class CompareProduct implements Comparator<Product> {
         @Override
         public int compare(Product p1, Product p2) {
             return (int) (p1.getCoordinates().getX() - p2.getCoordinates().getX());
@@ -164,11 +179,12 @@ public class CollectionRealizer {
             return Comparator.super.reversed();
         }
     }
-    private Vector<Product> sortByCoords(Vector<Product> collection){
-        return collection.stream().sorted(comparator).collect(Collectors.toCollection(Stack::new));
+
+    private Vector<Product> sortByCoords(Vector<Product> collection) {
+        return collection.stream().sorted(comparator).collect(Collectors.toCollection(Vector::new));
     }
-    public Vector<Product> getProductCollections(){
+
+    public Vector<Product> getProductCollections() {
         return collection;
     }
 }
-

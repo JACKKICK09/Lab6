@@ -22,8 +22,7 @@ public class Server {
     private Console console;
     private Response response;
     private Request request;
-    private static Logger logger;
-//    private static CollectionRealizer collectionRealizer;
+    public static Logger logger;
 
     public Server(InetSocketAddress address) {
         this.address = address;
@@ -32,6 +31,8 @@ public class Server {
     }
 
     public void run(String[] args) throws IOException {
+        ConsoleReadThread tr = new ConsoleReadThread();
+        tr.start();
         try {
             var pathToCollection = args[0]; //"collection.csv"
             CSVPars csvProvider = new CSVPars(Path.of(pathToCollection));
@@ -49,13 +50,16 @@ public class Server {
             while (true) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+//                Scanner scanner = new Scanner(System.in);
+//                String command = scanner.nextLine();
+//                if (command.equals("save")){
+//                    CommandManager.save();
+//                    logger.info("Коллекция сохранена");
+//                }
                 logger.info("Итератор по ключам селектора успешно получен");
-
-
                 while (keys.hasNext()){
                     SelectionKey key = keys.next();
                     logger.info("Обработка ключа началась");
-
                     try {
                         if (key.isValid()){
                             if (key.isAcceptable()){
@@ -86,12 +90,16 @@ public class Server {
                                 } catch (StreamCorruptedException e) {
                                     key.cancel();
                                     return;
+                                } catch (IOException | ClassNotFoundException e) {
+                                    logger.error("Ошибка чтения данных: " + e.getMessage());
+                                    key.cancel();
+                                    clientChannel.close();
+                                    return;
                                 }
 
                                 var commandName = request.getCommandName();
                                 var commandStrArg = request.getCommandStrArg();
                                 var commandObjArg = (ProductModel) request.getCommandObjArg();
-
 
                                 if (Console.products.containsKey(commandName)) {
                                     response = Console.products.get(commandName).execute(commandStrArg, commandObjArg);
@@ -157,12 +165,8 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
             logger.error("Ошибка ввода/вывода");
-        } catch (ClassNotFoundException e) {
-            logger.error("Несоответствующие классы" + e.getStackTrace());
         }
     }
-
-
 
     private Console createConsoleApp() {
         CommandManager commandManager = new CommandManager();
@@ -182,5 +186,4 @@ public class Server {
                 new fillterstartswithnameCommand(commandManager)
         );
     }
-
 }
